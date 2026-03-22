@@ -1,0 +1,18 @@
+========================================
+JHCIS Summary Centralization API Server
+========================================
+Environment: development
+Port: 4444
+API Version: v1
+Time: 2026-03-22T04:01:41.713Z
+========================================
+Supported endpoints:
+  POST /api/v1/sync/:summaryType
+  POST /api/v1/sync/batch
+  GET  /api/v1/sync/types
+  GET  /api/v1/health
+  GET  /api/v1/dashboard/summary
+  GET  /api/v1/dashboard/facilities
+  GET  /api/v1/dashboard/op-stats
+  GET  /api/v1/dashboard/facilities-stats
+========================================

@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JHCIS Summary Centralization Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="container-fluid">
+        <header class="dashboard-header">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <h1 class="dashboard-title">
+                        <i class="bi bi-speedometer2"></i> JHCIS Summary Centralization
+                    </h1>
+                    <p class="text-muted">Dashboard ติดตามสถานะการส่งข้อมูลจากหน่วย JHCIS</p>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <div class="last-update">
+                        <span>อัปเดตล่าสุด: </span>
+                        <span id="lastUpdate">-</span>
+                    </div>
+                    <div class="d-inline-flex gap-2">
+                        <a class="btn btn-sm btn-outline-light" href="admin.html">
+                            <i class="bi bi-key"></i> จัดการ API Key
+                        </a>
+                        <button class="btn btn-sm btn-primary" id="refreshBtn">
+                            <i class="bi bi-arrow-clockwise"></i> รีเฟรช
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <section class="filters-section">
+            <div class="row g-3">
+                <div class="col-lg-3 col-md-6">
+                    <label class="form-label">วันที่</label>
+                    <input type="date" class="form-control" id="dateFilter">
+                </div>
+                <div class="col-lg-3 col-md-6">
+                    <label class="form-label">ค้นหา</label>
+                    <input type="text" class="form-control" id="searchBox" placeholder="ชื่อหน่วยงาน หรือ hcode">
+                </div>
+                <div class="col-lg-2 col-md-4">
+                    <label class="form-label">สถานะ</label>
+                    <select class="form-select" id="statusFilter">
+                        <option value="all">ทั้งหมด</option>
+                        <option value="sent">ส่งแล้ว</option>
+                        <option value="not_sent">ยังไม่ส่ง</option>
+                    </select>
+                </div>
+                <div class="col-lg-2 col-md-4">
+                    <label class="form-label">ประเภทข้อมูล</label>
+                    <select class="form-select" id="metricFilter">
+                        <option value="op">OP</option>
+                        <option value="pp">PP</option>
+                        <option value="drug">PHARMACY</option>
+                        <option value="lab">LAB</option>
+                        <option value="financial">FINANCIAL</option>
+                        <option value="resource">RESOURCE</option>
+                        <option value="person">PERSON</option>
+                        <option value="general">GENERAL</option>
+                    </select>
+                </div>
+                <div class="col-lg-2 col-md-4 d-flex align-items-end">
+                    <button class="btn btn-success w-100" id="exportBtn">
+                        <i class="bi bi-download"></i> Export CSV
+                    </button>
+                </div>
+                <div class="col-12">
+                    <div class="auto-refresh">
+                        <input type="checkbox" id="autoRefresh" checked>
+                        <label for="autoRefresh">Auto-refresh (1 นาที)</label>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="summary-cards">
+            <div class="row g-3">
+                <div class="col-lg-3 col-md-6">
+                    <div class="card summary-card bg-primary">
+                        <div class="card-body">
+                            <h5 class="card-title">หน่วยงานทั้งหมด</h5>
+                            <h2 class="mb-0" id="totalFacilities">0</h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6">
+                    <div class="card summary-card bg-success">
+                        <div class="card-body">
+                            <h5 class="card-title">ส่งแล้ว</h5>
+                            <h2 class="mb-0" id="sentCount">0</h2>
+                            <small class="text-white" id="sentPercent">0%</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6">
+                    <div class="card summary-card bg-danger">
+                        <div class="card-body">
+                            <h5 class="card-title">ยังไม่ส่ง</h5>
+                            <h2 class="mb-0" id="notSentCount">0</h2>
+                            <small class="text-white" id="notSentPercent">0%</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6">
+                    <div class="card summary-card bg-info">
+                        <div class="card-body">
+                            <h5 class="card-title" id="selectedMetricTitle">ยอด OP วันนี้</h5>
+                            <h2 class="mb-0" id="selectedMetricTotal">0</h2>
+                            <small class="text-white" id="selectedMetricSubtitle">ผู้ป่วยนอก</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="charts-section">
+            <div class="row g-3">
+                <div class="col-md-8">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5>ยอดผู้ป่วยนอก (OP) รายวัน</h5>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="opChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5>สถานะการส่งข้อมูล</h5>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="statusChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row g-3 mt-1">
+                <div class="col-md-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5>จำนวนหน่วยงานที่ส่งข้อมูล (7 วันล่าสุด)</h5>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="facilitiesChart" height="80"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="table-section">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5>สถานะการส่งข้อมูลรายหน่วยงาน</h5>
+                    <span class="badge bg-primary" id="tableCount">0/0</span>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover table-striped mb-0" id="facilitiesTable">
+                            <thead>
+                                <tr>
+                                    <th>hcode</th>
+                                    <th>ชื่อหน่วยงาน</th>
+                                    <th>สถานะ</th>
+                                    <th>เวลา sync ล่าสุด</th>
+                                    <th id="selectedMetricColumnHeader">ข้อมูลที่เลือก</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <footer class="dashboard-footer">
+            <div class="row">
+                <div class="col-md-6">
+                    <p class="mb-0">JHCIS Summary Centralization Dashboard &copy; 2026</p>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <p class="mb-0">Auto-refresh: <span id="refreshStatus">เปิด</span> | Next update in: <span id="countdown">60</span>s</p>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <div class="modal fade" id="loadingModal" tabindex="-1" data-bs-backdrop="static">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-body text-center">
+                    <div class="spinner-border text-primary" role="status"></div>
+                    <p class="mt-3">กำลังโหลดข้อมูล...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="api.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>

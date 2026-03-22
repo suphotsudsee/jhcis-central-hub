@@ -1,0 +1,29 @@
+{
+  "name": "jhcis-dashboard",
+  "version": "1.0.0",
+  "description": "JHCIS Summary Centralization Monitoring Dashboard",
+  "main": "app.js",
+  "scripts": {
+    "start": "npx http-server -p 8080 -c-1",
+    "dev": "npx live-server --port=8080",
+    "build": "echo 'No build step required - vanilla JS'",
+    "test": "echo 'No tests specified'"
+  },
+  "keywords": [
+    "jhcis",
+    "dashboard",
+    "monitoring",
+    "healthcare",
+    "thailand"
+  ],
+  "author": "JHCIS Team",
+  "license": "MIT",
+  "devDependencies": {
+    "http-server": "^14.1.1",
+    "live-server": "^1.2.2"
+  },
+  "dependencies": {
+    "chart.js": "^4.4.0",
+    "bootstrap": "^5.3.0"
+  }
+}

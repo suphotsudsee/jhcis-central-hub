@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JHCIS Query Admin</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container py-4">
+        <div class="row justify-content-center mb-4" id="queryLoginSection">
+            <div class="col-lg-5">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Admin Login</h5>
+                    </div>
+                    <div class="card-body">
+                        <form id="queryLoginForm">
+                            <div class="mb-3">
+                                <label class="form-label">Email</label>
+                                <input type="email" class="form-control" id="queryAdminEmail" value="admin@ubonlocal.go.th" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Password</label>
+                                <input type="password" class="form-control" id="queryAdminPassword" value="admin123" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary w-100">เข้าสู่ระบบ</button>
+                        </form>
+                        <div class="alert alert-danger mt-3 mb-0" id="queryLoginResult" style="display:none;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="queryApp" style="display:none;">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="mb-1">JHCIS Query Admin</h1>
+                    <p class="text-muted mb-0">แก้ SQL ที่ส่งให้ jhcis-node-agent</p>
+                </div>
+                <div class="d-flex gap-2">
+                    <a class="btn btn-outline-primary" href="admin.html">กลับหน้า Admin</a>
+                    <button class="btn btn-outline-danger" id="queryLogoutBtn">Logout</button>
+                    <button class="btn btn-primary" id="refreshQueriesBtn">รีเฟรช</button>
+                </div>
+            </div>
+
+            <div class="alert alert-info" id="queryResult" style="display:none;"></div>
+
+            <div class="row g-4" id="queryCards"></div>
+        </div>
+    </div>
+
+    <script src="queries.js"></script>
+</body>
+</html>
