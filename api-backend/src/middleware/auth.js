@@ -28,10 +28,11 @@ async function validateApiKey(req, res, next) {
   
   try {
     // Query health_facilities table to validate API key
+    // Use ? placeholder for MySQL/MariaDB compatibility
     const queryText = `
       SELECT hcode, facility_name, api_key, status 
       FROM health_facilities 
-      WHERE api_key = $1 AND status = 'active'
+      WHERE api_key = ? AND status = 'active'
       LIMIT 1
     `;
     
