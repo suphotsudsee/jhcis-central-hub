@@ -256,10 +256,116 @@ async function regenerateFacilityKey(req, res) {
   }
 }
 
+/**
+ * Check if facility has related data
+ */
+async function checkFacilityDependencies(hcode) {
+  const tables = [
+    { name: 'summary_op_daily', display: 'ข้อมูลผู้ป่วยนอก (OP)' },
+    { name: 'summary_ip_daily', display: 'ข้อมูลผู้ป่วยใน (IP)' },
+    { name: 'summary_er_daily', display: 'ข้อมูลผู้ป่วยฉุกเฉิน (ER)' },
+    { name: 'summary_pp_daily', display: 'ข้อมูลส่งเสริมสุขภาพ (PP)' },
+    { name: 'summary_pharmacy_daily', display: 'ข้อมูลร้านยา (Pharmacy)' },
+    { name: 'summary_lab_daily', display: 'ข้อมูลห้องปฏิบัติการ (Lab)' },
+    { name: 'summary_radiology_daily', display: 'ข้อมูลรังสีวิทยา (Radiology)' },
+    { name: 'summary_financial_daily', display: 'ข้อมูลการเงิน (Financial)' },
+    { name: 'summary_resource_daily', display: 'ข้อมูลทรัพยากร (Resource)' },
+    { name: 'sync_log', display: 'ประวัติการ sync' },
+  ];
+
+  const dependencies = [];
+
+  for (const table of tables) {
+    try {
+      const result = await db.query(
+        `SELECT COUNT(*) as count FROM ${table.name} WHERE hcode = ?`,
+        [hcode]
+      );
+      const count = result.rows[0]?.count || 0;
+      if (count > 0) {
+        dependencies.push({
+          table: table.name,
+          display: table.display,
+          count: Number(count),
+        });
+      }
+    } catch (err) {
+      // Table might not exist yet, skip
+    }
+  }
+
+  return dependencies;
+}
+
+/**
+ * Delete facility - only allowed if no related data exists
+ */
+async function deleteFacility(req, res) {
+  try {
+    const hcode = String(req.params.hcode || '').trim();
+
+    if (!hcode) {
+      return res.status(400).json({
+        success: false,
+        error: 'VALIDATION_ERROR',
+        message: 'hcode is required',
+        statusCode: 400,
+      });
+    }
+
+    // Check if facility exists
+    const facilityResult = await db.query(
+      'SELECT hcode, facility_name FROM health_facilities WHERE hcode = ?',
+      [hcode]
+    );
+
+    if (facilityResult.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: 'NOT_FOUND',
+        message: 'Facility not found',
+        statusCode: 404,
+      });
+    }
+
+    // Check for related data
+    const dependencies = await checkFacilityDependencies(hcode);
+
+    if (dependencies.length > 0) {
+      const dependencyList = dependencies.map(d => `${d.display} (${d.count} รายการ)`).join(', ');
+      return res.status(409).json({
+        success: false,
+        error: 'CONFLICT',
+        message: `ไม่สามารถลบได้ เนื่องจากมีข้อมูลที่เกี่ยวข้อง: ${dependencyList}`,
+        data: { dependencies },
+        statusCode: 409,
+      });
+    }
+
+    // Delete the facility
+    await db.query('DELETE FROM health_facilities WHERE hcode = ?', [hcode]);
+
+    return res.status(200).json({
+      success: true,
+      message: `ลบหน่วยบริการ ${facilityResult.rows[0].facility_name} (${hcode}) เรียบร้อยแล้ว`,
+      statusCode: 200,
+    });
+  } catch (error) {
+    console.error('Delete facility error:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'INTERNAL_ERROR',
+      message: 'Failed to delete facility',
+      statusCode: 500,
+    });
+  }
+}
+
 module.exports = {
   loginAdmin,
   listFacilities,
   createFacility,
   updateFacility,
   regenerateFacilityKey,
+  deleteFacility,
 };

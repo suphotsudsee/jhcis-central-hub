@@ -82,6 +82,12 @@ app.use(express.urlencoded({
   limit: '1mb',
 }));
 
+// Set charset for all JSON responses
+app.use((req, res, next) => {
+  res.set('Content-Type', 'application/json; charset=utf-8');
+  next();
+});
+
 // ============================================
 // API Routes
 // ============================================
