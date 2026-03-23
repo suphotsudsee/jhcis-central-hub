@@ -4,8 +4,8 @@
   "description": "JHCIS Summary Centralization Monitoring Dashboard",
   "main": "app.js",
   "scripts": {
-    "start": "npx http-server -p 4848 -c-1",
-    "dev": "npx live-server --port=4848",
+    "start": "npx http-server -p 9020 -c-1",
+    "dev": "npx live-server --port=9020",
     "build": "echo 'No build step required - vanilla JS'",
     "test": "echo 'No tests specified'"
   },

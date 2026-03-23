@@ -1,4 +1,4 @@
-const ADMIN_API_BASE_URL = 'http://localhost:4444/api/v1/admin';
+const ADMIN_API_BASE_URL = 'http://localhost:9021/api/v1/admin';
 const ADMIN_TOKEN_KEY = 'jhcis_admin_token';
 const QUERY_TYPES = ['op', 'pp', 'pharmacy', 'lab', 'financial', 'resource', 'person', 'general'];
 

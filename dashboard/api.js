@@ -3,7 +3,7 @@
  * Handles all API calls to the Central backend
  */
 
-const API_BASE_URL = 'http://localhost:4444/api/v1';
+const API_BASE_URL = 'http://localhost:9021/api/v1';
 
 function buildApiUrl(path, params = {}) {
     const url = new URL(`${API_BASE_URL}${path}`);
