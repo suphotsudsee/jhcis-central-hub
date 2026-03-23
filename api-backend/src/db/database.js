@@ -22,6 +22,12 @@ const pool = isMySql
       waitForConnections: true,
       connectionLimit: 20,
       queueLimit: 0,
+      typeCast: function (field, next) {
+        if (field.type === 'VAR_STRING' || field.type === 'VARCHAR') {
+          return field.string();
+        }
+        return next();
+      },
     })
   : new (require('pg').Pool)({
       ...baseConfig,

@@ -100,6 +100,7 @@ function renderFacilities(rows) {
                 <button class="btn btn-sm btn-outline-secondary" data-action="toggle" data-hcode="${facility.hcode}" data-status="${facility.status}" data-name="${facility.facility_name}">${facility.status === 'active' ? 'ปิด' : 'เปิด'}</button>
                 <button class="btn btn-sm btn-outline-dark" data-action="edit" data-hcode="${facility.hcode}" data-status="${facility.status}" data-name="${facility.facility_name}">แก้ชื่อ</button>
                 <button class="btn btn-sm btn-outline-primary" data-action="regen" data-hcode="${facility.hcode}">สร้าง Key ใหม่</button>
+                <button class="btn btn-sm btn-outline-danger" data-action="delete" data-hcode="${facility.hcode}" data-name="${facility.facility_name}">ลบ</button>
             </td>
         `;
         tbody.appendChild(tr);
@@ -207,6 +208,27 @@ async function handleTableClick(event) {
             status: button.dataset.status,
             name: button.dataset.name || '',
         });
+        return;
+    }
+
+    if (action === 'delete') {
+        const facilityName = button.dataset.name || hcode;
+        const confirmed = confirm(`ยืนยันการลบหน่วยบริการ "${facilityName}" (${hcode})?\n\nระบบจะตรวจสอบก่อนว่ามีข้อมูลที่เกี่ยวข้องหรือไม่`);
+        if (!confirmed) {
+            return;
+        }
+
+        try {
+            const payload = await requestJson(buildAdminUrl(`/facilities/${hcode}`), {
+                method: 'DELETE',
+            });
+            showFormResult(payload.message || `ลบหน่วยบริการ ${hcode} แล้ว`, 'success');
+            await loadFacilities();
+        } catch (error) {
+            // Show detailed error message for dependencies
+            showFormResult(error.message, 'danger');
+        }
+        return;
     }
 }
 
