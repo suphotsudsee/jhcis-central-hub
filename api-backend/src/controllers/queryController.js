@@ -61,28 +61,19 @@ async function ensureDefaultQuery(summaryType) {
 async function getCentralQuery(req, res) {
   try {
     const summaryType = String(req.params.summaryType || '').toLowerCase();
-    let result = await db.query(
-      `
-        SELECT summary_type, sql_text, updated_at
-        FROM central_queries
-        WHERE summary_type = $1 AND is_active = 1
-        LIMIT 1
-      `,
-      [summaryType]
-    );
+    
+    // Use correct placeholder based on database type
+    const placeholder = db.isMySql ? '?' : '$1';
+    const sql = `SELECT summary_type, sql_text, updated_at FROM central_queries WHERE summary_type = ${placeholder} AND is_active = 1 LIMIT 1`;
+    
+    let result = await db.query(sql, [summaryType]);
 
     if (result.rows.length === 0) {
       const seeded = await ensureDefaultQuery(summaryType);
       if (seeded) {
-        result = await db.query(
-          `
-            SELECT summary_type, sql_text, updated_at
-            FROM central_queries
-            WHERE summary_type = $1 AND is_active = 1
-            LIMIT 1
-          `,
-          [summaryType]
-        );
+        const placeholder2 = db.isMySql ? '?' : '$1';
+        const sql2 = `SELECT summary_type, sql_text, updated_at FROM central_queries WHERE summary_type = ${placeholder2} AND is_active = 1 LIMIT 1`;
+        result = await db.query(sql2, [summaryType]);
       }
     }
 
@@ -128,11 +119,7 @@ async function getCentralQuery(req, res) {
 async function listCentralQueries(_req, res) {
   try {
     const result = await db.query(
-      `
-        SELECT summary_type, sql_text, is_active, updated_at
-        FROM central_queries
-        ORDER BY summary_type
-      `
+      'SELECT summary_type, sql_text, is_active, updated_at FROM central_queries ORDER BY summary_type'
     );
 
     const data = result.rows.map((row) => ({
