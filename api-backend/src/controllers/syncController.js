@@ -209,16 +209,17 @@ async function syncBatch(req, res) {
  */
 function getTableName(summaryType) {
   const tableMap = {
-    op: 'summary_op_daily',
-    pp: 'summary_pp_daily',
-    pharmacy: 'summary_pharmacy_daily',
-    lab: 'summary_lab_daily',
-    financial: 'summary_financial_daily',
-    resource: 'summary_resource_daily',
+    op: 'summary_op',
+    er: 'summary_er',
+    pp: 'summary_pp',
+    pharmacy: 'summary_pharmacy',
+    lab: 'summary_lab',
+    financial: 'summary_financial',
+    resource: 'summary_resource',
     person: 'summary_person',
-    ip: 'summary_ip_daily',
-    er: 'summary_er_daily',
-    radiology: 'summary_radiology_daily',
+    ip: 'summary_ip',
+    radiology: 'summary_radiology',
+    general: 'summary_general',
   };
   
   return tableMap[summaryType] || 'summary_general';

@@ -20,6 +20,12 @@ const summarySchemas = {
     total_visits: Joi.number().integer().min(0).required().description('Total outpatient visits'),
   }),
   
+  // ER (Emergency)
+  er: Joi.object({
+    ...commonFields,
+    total_visits: Joi.number().integer().min(0).required().description('Total emergency visits'),
+  }),
+  
   // PP (Preventive & Promotive)
   pp: Joi.object({
     ...commonFields,
