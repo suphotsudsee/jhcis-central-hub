@@ -73,18 +73,25 @@ app.use('/api/', limiter);
 
 // JSON body parser with size limit
 app.use(express.json({
-  limit: '1mb', // Adjust based on expected payload size
+  limit: '50mb', // Increased for large imports
 }));
 
 // URL-encoded body parser
 app.use(express.urlencoded({
   extended: true,
-  limit: '1mb',
+  limit: '50mb', // Increased for large imports
 }));
 
 // Set charset for all JSON responses
 app.use((req, res, next) => {
   res.set('Content-Type', 'application/json; charset=utf-8');
+  next();
+});
+
+// Increase timeout for large file uploads
+app.use((req, res, next) => {
+  req.setTimeout(300000); // 5 minutes
+  res.setTimeout(300000); // 5 minutes
   next();
 });
 
@@ -96,6 +103,10 @@ app.use((req, res, next) => {
 app.use('/api/v1', syncRoutes);
 app.use('/api/v1', dashboardRoutes);
 app.use('/api/v1', adminRoutes);
+
+// Import routes
+const importRoutes = require('./routes/import');
+app.use('/api/v1/import', importRoutes);
 
 // ============================================
 // Error Handling

@@ -1,0 +1,79 @@
+version: '3.8'
+
+services:
+  # MySQL Database
+  mysql:
+    image: mysql:8.0
+    container_name: jhcis-mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-jhcis_root_password}
+      MYSQL_DATABASE: jhcis_central
+      MYSQL_USER: ${DB_USER:-jhcis}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-jhcis_password}
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./database/jhcis_central.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    networks:
+      - jhcis-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # API Backend
+  api:
+    build:
+      context: ./api-backend
+      dockerfile: Dockerfile
+    container_name: jhcis-api
+    restart: always
+    environment:
+      NODE_ENV: production
+      PORT: 9021
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_USER: ${DB_USER:-jhcis}
+      DB_PASSWORD: ${DB_PASSWORD:-jhcis_password}
+      DB_NAME: jhcis_central
+      JWT_SECRET: ${JWT_SECRET:-change_this_secret}
+      API_KEY_SALT: ${API_KEY_SALT:-change_this_salt}
+    ports:
+      - "9021:9021"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - jhcis-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9021/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Nginx Reverse Proxy (Optional)
+  nginx:
+    image: nginx:alpine
+    container_name: jhcis-nginx
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - api
+    networks:
+      - jhcis-network
+
+networks:
+  jhcis-network:
+    driver: bridge
+
+volumes:
+  mysql_data:
+    driver: local
