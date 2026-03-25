@@ -115,7 +115,8 @@ function renderOPChart() {
     const opStats = dashboardData?.op_stats || [];
     const labels = opStats.map((item) => {
         const date = new Date(item.date);
-        return `${date.getDate()}/${date.getMonth() + 1}`;
+        const buddhistYear = date.getFullYear() + 543;
+        return `${date.getDate()}/${date.getMonth() + 1}/${buddhistYear}`;
     });
     const data = opStats.map((item) => item.op_count || 0);
 
@@ -219,7 +220,8 @@ function renderFacilitiesChart() {
     const facilitiesStats = dashboardData?.facilities_stats || [];
     const labels = facilitiesStats.map((item) => {
         const date = new Date(item.date);
-        return `${date.getDate()}/${date.getMonth() + 1}`;
+        const buddhistYear = date.getFullYear() + 543;
+        return `${date.getDate()}/${date.getMonth() + 1}/${buddhistYear}`;
     });
     const sentData = facilitiesStats.map((item) => item.sent_count || 0);
     const notSentData = facilitiesStats.map((item) => item.not_sent_count || 0);

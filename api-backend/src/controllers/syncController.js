@@ -102,6 +102,7 @@ async function syncSummary(req, res) {
 /**
  * Handle batch sync request
  * Processes multiple summary records in a transaction
+ * Optimized for high-volume concurrent requests
  * 
  * @param {Object} req - Express request object
  * @param {Object} res - Express response object
@@ -120,10 +121,22 @@ async function syncBatch(req, res) {
       });
     }
     
+    // Limit batch size to prevent timeout
+    if (batches.length > 1000) {
+      return res.status(400).json({
+        success: false,
+        error: 'BAD_REQUEST',
+        message: 'Batch size exceeds limit (max 1000 records)',
+        statusCode: 400,
+      });
+    }
+    
     const results = [];
     const errors = [];
     
-    // Process each batch item
+    // Group by table for bulk insert
+    const groupedData = {};
+    
     for (const item of batches) {
       const { summaryType, data } = item;
       
@@ -150,31 +163,41 @@ async function syncBatch(req, res) {
       }
       
       const tableName = getTableName(summaryType);
-      const reportDate = formatDateOnly(validation.data.report_date);
-      const dbData = {
+      
+      if (!groupedData[tableName]) {
+        groupedData[tableName] = [];
+      }
+      
+      groupedData[tableName].push({
         hcode: validation.data.hcode,
-        report_date: reportDate,
+        report_date: formatDateOnly(validation.data.report_date),
         report_period: validation.data.report_period,
         summary_type: summaryType,
         data: JSON.stringify(validation.data),
-        created_at: new Date(),
-        updated_at: new Date(),
-      };
-      
+      });
+    }
+    
+    // Bulk insert for each table
+    for (const [tableName, records] of Object.entries(groupedData)) {
       try {
-        const result = await upsertSummary(tableName, dbData, ['hcode', 'report_date']);
-        results.push({
-          summaryType,
-          hcode: result.hcode,
-          report_date: formatDateOnly(result.report_date),
-          status: 'success',
-        });
+        await bulkUpsert(tableName, records);
+        for (const record of records) {
+          results.push({
+            summaryType: record.summary_type,
+            hcode: record.hcode,
+            report_date: record.report_date,
+            status: 'success',
+          });
+        }
       } catch (err) {
-        errors.push({
-          summaryType,
-          error: 'DB_ERROR',
-          message: err.message,
-        });
+        for (const record of records) {
+          errors.push({
+            summaryType: record.summary_type,
+            hcode: record.hcode,
+            error: 'DB_ERROR',
+            message: err.message,
+          });
+        }
       }
     }
     
@@ -200,6 +223,59 @@ async function syncBatch(req, res) {
       statusCode: 500,
     });
   }
+}
+
+/**
+ * Bulk upsert for multiple records
+ * Uses a single INSERT ... ON DUPLICATE KEY UPDATE
+ * 
+ * @param {string} table - Table name
+ * @param {Array} records - Array of data objects
+ * @returns {Promise<void>}
+ */
+async function bulkUpsert(table, records) {
+  if (records.length === 0) return;
+  
+  const columns = ['hcode', 'report_date', 'report_period', 'summary_type', 'data', 'created_at', 'updated_at'];
+  const now = new Date();
+  
+  const values = records.map((record, index) => {
+    const offset = index * columns.length;
+    return columns.map((col, colIndex) => {
+      if (col === 'created_at' || col === 'updated_at') {
+        return `NOW()`;
+      }
+      return `?`;
+    }).join(', ');
+  });
+  
+  const placeholders = records.map((_, index) => `(${columns.map((col, colIndex) => {
+    if (col === 'created_at' || col === 'updated_at') {
+      return 'NOW()';
+    }
+    return '?';
+  }).join(', ')})`).join(', ');
+  
+  const flatValues = records.flatMap(record => [
+    record.hcode,
+    record.report_date,
+    record.report_period,
+    record.summary_type,
+    record.data,
+  ]);
+  
+  const updateFields = columns
+    .filter(col => !['hcode', 'report_date'].includes(col))
+    .map(col => `${col} = VALUES(${col})`)
+    .join(', ');
+  
+  const text = `
+    INSERT INTO ${table} (${columns.join(', ')})
+    VALUES ${placeholders}
+    ON DUPLICATE KEY UPDATE ${updateFields}
+  `;
+  
+  await db.query(text, flatValues);
 }
 
 /**

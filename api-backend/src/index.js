@@ -54,7 +54,7 @@ app.use(cors({
 // Rate Limiting - Prevent brute force attacks
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // Limit each IP to 100 requests per windowMs
+  max: 5000, // Limit each IP to 5000 requests per windowMs (for historical sync)
   message: {
     success: false,
     error: 'TOO_MANY_REQUESTS',

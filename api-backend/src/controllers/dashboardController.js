@@ -143,7 +143,7 @@ async function getDashboardPayload({
     facilityRows = facilityRows.filter((row) => row.status === status);
   }
 
-  const opStats = await getOpStatsData(days);
+  const opStats = await getOpStatsData(30, reportDate);
   const facilitiesStats = await getFacilitiesStatsData(7, facilities.length);
 
   const summary = {
@@ -161,16 +161,33 @@ async function getDashboardPayload({
   };
 }
 
-async function getOpStatsData(days = 30) {
+async function getOpStatsData(days = 30, targetDate = null) {
   const totalDays = Math.max(1, toNumber(days) || 30);
+  
+  // Use target date if provided, otherwise find the latest date with data
+  let maxDate;
+  if (targetDate) {
+    maxDate = formatDateOnly(targetDate);
+  } else {
+    // Get the latest date that has actual data (total_visits > 0)
+    const maxDateResult = await db.query(`
+      SELECT MAX(report_date) as max_date FROM summary_op 
+      WHERE JSON_EXTRACT(data, '$.total_visits') > 0
+    `);
+    maxDate = maxDateResult.rows[0]?.max_date 
+      ? formatDateOnly(maxDateResult.rows[0].max_date) 
+      : formatDateOnly(new Date());
+  }
+  
+  // Query data from the target date backwards
   const result = await db.query(
     `
       SELECT report_date, hcode, data
       FROM summary_op
-      WHERE report_date >= DATE_SUB(CURDATE(), INTERVAL ? DAY)
+      WHERE report_date >= DATE_SUB(?, INTERVAL ? DAY)
       ORDER BY report_date ASC
     `,
-    [Math.max(totalDays - 1, 0)]
+    [maxDate, Math.max(totalDays - 1, 0)]
   );
 
   const statsMap = new Map();
@@ -189,9 +206,11 @@ async function getOpStatsData(days = 30) {
     statsMap.set(date, current);
   });
 
+  // Generate dates from maxDate backwards
   const dates = [];
+  const maxDateObj = new Date(maxDate + 'T00:00:00Z');
   for (let offset = totalDays - 1; offset >= 0; offset -= 1) {
-    const date = new Date();
+    const date = new Date(maxDateObj);
     date.setDate(date.getDate() - offset);
     dates.push(formatDateOnly(date));
   }

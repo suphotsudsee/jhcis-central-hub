@@ -20,7 +20,7 @@ const pool = isMySql
       charset: 'utf8mb4',
       dateStrings: true,
       waitForConnections: true,
-      connectionLimit: 20,
+      connectionLimit: 50,  // Increased for high concurrency
       queueLimit: 0,
       typeCast: function (field, next) {
         if (field.type === 'VAR_STRING' || field.type === 'VARCHAR') {
@@ -31,7 +31,7 @@ const pool = isMySql
     })
   : new (require('pg').Pool)({
       ...baseConfig,
-      max: 20,
+      max: 50,  // Increased for high concurrency
       idleTimeoutMillis: 30000,
       connectionTimeoutMillis: 2000,
     });
