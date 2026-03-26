@@ -1,100 +1,75 @@
-# JHCIS Summary Centralization System
+# JHCIS Central Hub
 
-## ภาพรวมโครงการ (Project Overview)
+ระบบรวบรวมข้อมูล JHCIS จากโรงพยาบาลส่งเสริมสุขภาพชุมชนทั่วประเทศ
 
-ระบบ JHCIS Summary Centralization เป็นโซลูชันสำหรับรวบรวมและส่งข้อมูลสรุปจาก 80 หน่วยโรงพยาบาลไปยังเซิร์ฟเวอร์ส่วนกลาง เพื่อการวิเคราะห์และรายงานแบบรวมศูนย์
-
-### สถาปัตยกรรมระบบ (System Architecture)
+## โครงสร้าง
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                    80 หน่วยโรงพยาบาล (80 Units)                 │
-│  ┌─────────┐  ┌─────────┐  ┌─────────┐        ┌─────────┐      │
-│  │ Unit 1  │  │ Unit 2  │  │ Unit 3  │  ...   │ Unit 80 │      │
-│  │ Python  │  │ Python  │  │ Python  │        │ Python  │      │
-│  │ Script  │  │ Script  │  │ Script  │        │ Script  │      │
-│  └────┬────┘  └────┬────┘  └────┬────┘        └────┬────┘      │
-│       │            │            │                   │            │
-│       └────────────┴────────────┴───────────────────┘            │
-│                              │                                   │
-│                              ▼                                   │
-│                    HTTPS/API Connection                          │
-│                              │                                   │
-└──────────────────────────────┼───────────────────────────────────┘
-                               ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                    เซิร์ฟเวอร์ส่วนกลาง (Central Server)          │
-│  ┌─────────────────────────────────────────────────────────┐   │
-│  │              API Backend (Node.js)                       │   │
-│  └─────────────────────────────────────────────────────────┘   │
-│  ┌─────────────────────────────────────────────────────────┐   │
-│  │              Database (PostgreSQL/MariaDB)               │   │
-│  └─────────────────────────────────────────────────────────┘   │
-│  ┌─────────────────────────────────────────────────────────┐   │
-│  │              Dashboard (Web Interface)                   │   │
-│  └─────────────────────────────────────────────────────────┘   │
-└─────────────────────────────────────────────────────────────────┘
+jhcis-central-hub/
+├── api-backend/          # Node.js API Server
+├── dashboard/            # Frontend Dashboard
+├── database/              # SQL Schema
+├── nginx/                 # Nginx Configuration
+├── deploy/                # Deployment Scripts
+├── docker-compose.yml     # Docker Compose
+└── docs/                  # Documentation
 ```
 
-### ส่วนประกอบหลัก (Main Components)
+## การ Deploy
 
-1. **หน่วยย่อย (80 Units)** - แต่ละหน่วยมี Python Script สำหรับ:
-   - ดึงข้อมูลจากฐานข้อมูล MySQL ของหน่วย
-   - ประมวลผลและสรุปข้อมูล
-   - ส่งข้อมูลไปยังเซิร์ฟเวอร์ส่วนกลางผ่าน API
-   - ทำงานอัตโนมัติผ่าน Windows Task Scheduler
+ดูรายละเอียดใน [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) หรือ [docs/QUICKSTART.md](docs/QUICKSTART.md)
 
-2. **เซิร์ฟเวอร์ส่วนกลาง (Central Server)** - ประกอบด้วย:
-   - API Backend (Node.js) สำหรับรับข้อมูลจาก 80 หน่วย
-   - Database (PostgreSQL/MariaDB) สำหรับเก็บข้อมูลรวม
-   - Dashboard สำหรับแสดงผลและวิเคราะห์ข้อมูล
-   - ระบบ Monitoring และ Alerting
+### Quick Deploy (Windows)
 
-### เอกสารประกอบ (Documentation)
+```powershell
+cd C:\fullstack\jhcis-central-hub
+deploy\package.bat
+```
 
-| ไฟล์ | คำอธิบาย |
-|------|----------|
-| `docs/deployment-guide-80-units.md` | คู่มือติดตั้ง Script สำหรับ 80 หน่วย |
-| `docs/central-server-deployment.md` | คู่มือติดตั้งและดูแลเซิร์ฟเวอร์ส่วนกลาง |
-| `docs/quick-start.md` | คู่มือเริ่มต้นเร็วสำหรับทดสอบ |
-| `docs/troubleshooting.md` | แนวทางแก้ปัญหาที่พบบ่อย |
-| `docs/maintenance-checklist.md` | เช็คลิสต์การดูแลรักษา |
+### Quick Deploy (Linux)
 
-### ผู้ใช้เป้าหมาย (Target Audience)
+```bash
+ssh user@ubonlocal.phoubon.in.th
+cd /opt/jhcis-central-hub
+./deploy/deploy.sh
+```
 
-เอกสารนี้เขียนสำหรับ:
-- เจ้าหน้าที่ไอทีในโรงพยาบาล
-- ผู้ดูแลระบบฐานข้อมูล
-- ผู้ดูแลระบบเครือข่าย
-- ทีมพัฒนาและปฏิบัติการ
+## Endpoints
 
-### เทคโนโลยีที่ใช้ (Technology Stack)
+| Endpoint | รายละเอียด |
+|----------|------------|
+| `/api/v1/sync` | Sync API |
+| `/api/v1/import/upload` | Import ZIP |
+| `/api/v1/dashboard` | Dashboard |
+| `/api/v1/queries` | Query Management |
 
-**หน่วยย่อย:**
-- Python 3.8+
-- MySQL Connector
-- Windows Task Scheduler
-- PowerShell
+## การพัฒนา
 
-**เซิร์ฟเวอร์ส่วนกลาง:**
-- Node.js 18+
-- PostgreSQL 14+ หรือ MariaDB 10.6+
-- Nginx (Reverse Proxy)
-- Let's Encrypt (SSL Certificate)
-- PM2 (Process Manager)
+### Requirements
+- Node.js 20+
+- MySQL 8.0+
+- Docker & Docker Compose
 
----
+### Local Development
 
-## สารบัญ (Table of Contents)
+```bash
+# Install dependencies
+cd api-backend
+npm install
 
-1. [การติดตั้งหน่วยย่อย](docs/deployment-guide-80-units.md)
-2. [การติดตั้งเซิร์ฟเวอร์ส่วนกลาง](docs/central-server-deployment.md)
-3. [เริ่มต้นเร็ว](docs/quick-start.md)
-4. [แก้ปัญหา](docs/troubleshooting.md)
-5. [เช็คลิสต์การดูแล](docs/maintenance-checklist.md)
+# Create .env file
+cp .env.example .env
 
----
+# Start MySQL
+docker-compose up -d mysql
 
-**เวอร์ชันเอกสาร:** 1.0  
-**วันที่อัปเดต:** 21 มีนาคม 2026  
-**ผู้รับผิดชอบ:** ทีมพัฒนา JHCIS
+# Start API
+npm run dev
+
+# Run tests
+npm test
+```
+
+## License
+
+MIT

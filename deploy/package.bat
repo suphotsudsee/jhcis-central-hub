@@ -17,6 +17,7 @@ mkdir %PACKAGE_DIR%
 
 echo Copying files...
 xcopy /E /I /Y api-backend %PACKAGE_DIR%\api-backend
+xcopy /E /I /Y dashboard %PACKAGE_DIR%\dashboard
 xcopy /E /I /Y database %PACKAGE_DIR%\database
 xcopy /E /I /Y nginx %PACKAGE_DIR%\nginx
 xcopy /E /I /Y docs %PACKAGE_DIR%\docs
